@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   email     String   @unique
   username  String   @unique
   clerkId   String   @unique
@@ -23,23 +24,23 @@ model User {
   image     String?
   location  String?
   website   String?
-  createdAt DateTime @default(now()) // member since 2020
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations: 
-  posts    Post[] // One-to-many
-  comments Comment[] // One-to-many
-  likes    Like[] // One-to-many
+  // Relations
+  posts    Post[] // Relations One-to-Many
+  comments Comment[] // Relations One-to-Many
+  likes    Like[] // Relations One-to-Many
 
-  followers Follows[] @relation("following") // users who follow this user
-  following Follows[] @relation("follower") // users this user follows
+  followers Follows[] @relation("following") // User who follow this user
+  following Follows[] @relation("follower") // User this user follows
 
   notifications        Notification[] @relation("userNotifications") // notifications received by a user
-  notificationsCreated Notification[] @relation("notificationCreator") // notifications triggered by a user
+  notificationsCreated Notification[] @relation("notificationCreator") // notification created by a user
 }
 
 model Post {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   authorId  String
   content   String?
   image     String?
@@ -47,40 +48,41 @@ model Post {
   updatedAt DateTime @updatedAt
 
   // Relations
-  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade) // cascade delete means delete all posts if author is deleted
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade) // Delete all post if author is delete
   comments      Comment[]
   likes         Like[]
   notifications Notification[]
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   content   String
   authorId  String
   postId    String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Relations
+  // Relations 
   author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
-  @@index([authorId, postId]) // composite index for faster queries
+  @@index([authorId, postId]) // Composite index for faster queries
 }
 
 model Like {
-  id        String   @id @default(cuid())
-  postId    String
+  id        String   @id @default(uuid())
   userId    String
+  postId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  // Relation
+  author User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, postId]) // this prevents same user liking post twice
-  @@index([userId, postId]) // composite index for faster queries
+  @@unique([userId, postId])
+  @@index([userId, postId]) // Prevent multiple likes from a single user
 }
 
 model Follows {
@@ -88,12 +90,11 @@ model Follows {
   followingId String
   createdAt   DateTime @default(now())
 
-  // Relations
   follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@id([followerId, followingId]) // composite primary key prevents duplicate follows
-  @@index([followerId, followingId]) // composite index for faster queries
+  @@id([followerId, followingId])
+  @@index([followerId, followingId])
 }
 
 model Notification {
